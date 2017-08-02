@@ -6,10 +6,8 @@ import (
 )
 
 func main() {
-	tickC := make(chan *time.Ticker)
-	done := make(chan bool)
-	go tickCounter(1, tickC, done)
-	ticker := <-tickC
+    ticker := time.NewTicker(1 * time.Second)
+	done := tickCounter(ticker)
 	time.Sleep(5 * time.Second)
 	ticker.Stop()
 	done <- true
@@ -17,21 +15,24 @@ func main() {
 	fmt.Println("Exiting main ..")
 }
 
-func tickCounter(n int, tickC chan *time.Ticker, done chan bool) {
-	ticker := time.NewTicker(time.Duration(n) * time.Second)
-	tickC <- ticker
-	i := 0
-Loop:
-	for {
-		select {
-		case t := <-ticker.C:
-			i++
-			fmt.Println("Count", i, "at", t)
-		case <-done:
-			fmt.Println("done signal")
-			break Loop
-		}
-	}
+func tickCounter(ticker *time.Ticker) chan bool {
+    done := make(chan bool)
+    go func() {
+        i := 0
+    Loop:
+        for {
+            select {
+            case t := <-ticker.C:
+                i++
+                fmt.Println("Count", i, "at", t)
+            case <-done:
+                fmt.Println("done signal")
+                break Loop
+            }
+        }
 
-	fmt.Println("Exiting tick counter ...")
+        fmt.Println("Exiting tick counter ...")
+    }()
+
+    return done
 }
